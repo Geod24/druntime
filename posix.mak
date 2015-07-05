@@ -174,7 +174,6 @@ $(DOCDIR)/rt_util_container_%.html : src/rt/util/container/%.d $(DMD)
 	$(DMD) $(DDOCFLAGS) -Df$@ project.ddoc $(DOCFMT) $<
 
 $(DOCDIR)/rt_util_%.html : src/rt/util/%.d $(DMD)
-	$(DMD) $(DDOCFLAGS) -Df$@ project.ddoc $(DOCFMT) $<
 
 ######################## Header .di file generation ##############################
 
