@@ -96,5 +96,24 @@ else version (CppRuntime_Microsoft)
         //virtual ~this();
     }
 }
+else version (CppRuntime_Clang)
+{
+    class exception
+    {
+        this() nothrow;
+        //virtual ~this() nothrow;
+        //exception& operator=(const exception&) noexcept;
+        void dtor1();
+        void dtor2();
+        const(char)* what() const nothrow;
+    }
+
+    class bad_exception : exception
+    {
+        this() nothrow;
+        //virtual ~this() nothrow;
+        override const(char)* what() const nothrow;
+    }
+}
 else
     static assert(0, "Missing std::exception binding for this platform");
