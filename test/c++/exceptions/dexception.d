@@ -11,8 +11,6 @@ module dexception;
 import core.stdc.string : strcmp;
 import core.stdcpp.exception;
 
-extern(C++) void func1 ();
-
 void main ()
 {
     try
@@ -28,19 +26,23 @@ void main ()
 }
 
 // Make sure the GC doesn't free this
-private dexception saved;
+private exception saved;
 
-extern(C++)
-class dexception : Exception
+extern(C++):
+
+void func1 ();
+
+class dexception : exception
 {
-    extern(D) this (const(char)* p) { super(null); data = p; }
+    extern(D) this (const(char)* p) { data = p; }
 
     private const(char)* data;
-    const(char)* what() const nothrow { return data; }
+    override const(char)* what() const nothrow { return data; }
 }
 
-extern(C++) void func2 ()
+void func2 ()
 {
-    saved = new dexception("Hello from D side");
+    //saved = new dexception("Hello from D side");
+    saved = new exception();
     throw saved;
 }
