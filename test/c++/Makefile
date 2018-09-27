@@ -21,4 +21,4 @@ $(ROOT)/%.done: $(ROOT)/%
 
 $(ROOT)/exceptions:
 	$(QUIET)$(CXX) exceptions/exception.cpp -c -o exceptions/cpp_exception_test.o
-	$(QUIET)$(DMD) exceptions/cpp_exception_test.o exceptions/dexception.d $(LDSTDCPP) -of$@
+	$(QUIET)$(DMD) $(LDSTDCPP) exceptions/cpp_exception_test.o exceptions/dexception.d -of$@

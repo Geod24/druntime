@@ -143,5 +143,53 @@ else version (CppRuntime_Gcc)
         override const(char)* what() const;
     }
 }
+else version (all)
+{
+    import core.stdcpp.exception;
+
+    // extern (C++, "__cxxabiv1")
+    // {
+    //     class __class_type_info;
+    // }
+
+    extern (C++, "std"):
+
+    class type_info
+    {
+        //void dtor1();                           // consume destructor slot in vtbl[]
+        //void dtor2();                           // consume destructor slot in vtbl[]
+        // final const(char)* name()() const nothrow {
+        //     return _name[0] == '*' ? _name + 1 : _name;
+        // }
+        // final bool before()(const type_info _arg) const {
+        //     import core.stdc.string : strcmp;
+        //     return (_name[0] == '*' && _arg._name[0] == '*')
+        //         ? _name < _arg._name
+        //         : strcmp(_name, _arg._name) < 0;
+        // }
+        //bool operator==(const type_info) const;
+        //bool __is_pointer_p() const;
+        //bool __is_function_p() const;
+        //bool __do_catch(const type_info, void**, uint) const;
+        //bool __do_upcast(const __cxxabiv1.__class_type_info, void**) const;
+
+        const(char)* _name;
+        this(const(char)*);
+    }
+
+    class bad_cast : exception
+    {
+        //this();
+        //~this();
+        override const(char)* what() const;
+    }
+
+    class bad_typeid : exception
+    {
+        //this();
+        //~this();
+        override const(char)* what() const;
+    }
+}
 else
     static assert(0, "Missing std::type_info binding for this platform");
