@@ -91,6 +91,22 @@ extern (C) void[] _d_newarraymiTX(const TypeInfo ti, size_t[] dims);
 extern (C) void* _d_newitemT(in TypeInfo _ti);
 extern (C) void* _d_newitemiT(in TypeInfo _ti);
 
+T _d_NewClassTrace(T, alias const(void)[] ClassInit)(string file, int line, string funcname)
+{
+    version (tracegc)
+    {
+        printf("_d_newclassTrace class = %.*s file = '%.*s' line = %d function = '%.*s'\n",
+               cast(int)ci.name.length, ci.name.ptr,
+               cast(int)file.length, file.ptr,
+               line,
+               cast(int)funcname.length, funcname.ptr
+            );
+    }
+    // TODO: Check 'name' vs 'stringof'
+    accumulate(file, line, funcname, T.stringof, ClassInit.length);
+    return _d_NewClass!(T, ClassInit)();
+}
+
 extern (C) Object _d_newclassTrace(string file, int line, string funcname, const ClassInfo ci)
 {
     version (tracegc)
@@ -531,5 +547,3 @@ extern (C) void* _d_allocmemoryTrace(string file, int line, string funcname, siz
     accumulate(file, line, funcname, "closure", sz);
     return _d_allocmemory(sz);
 }
-
-
