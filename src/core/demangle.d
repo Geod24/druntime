@@ -1008,7 +1008,6 @@ pure @safe:
         F       // D
         U       // C
         W       // Windows
-        V       // Pascal
         R       // C++
 
     FuncAttrs:
@@ -1087,10 +1086,6 @@ pure @safe:
         case 'W': // Windows
             popFront();
             put( "extern (Windows) " );
-            break;
-        case 'V': // Pascal
-            popFront();
-            put( "extern (Pascal) " );
             break;
         case 'R': // C++
             popFront();
@@ -2379,8 +2374,8 @@ private template isExternCPP(FT) if (is(FT == function))
 private template hasPlainMangling(FT) if (is(FT == function))
 {
     enum lnk = __traits(getLinkage, FT);
-    // C || Pascal || Windows
-    enum hasPlainMangling = lnk == "C" || lnk == "Pascal" || lnk == "Windows";
+    // C || Windows
+    enum hasPlainMangling = lnk == "C" || lnk == "Windows";
 }
 
 @safe pure nothrow unittest
