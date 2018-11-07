@@ -115,6 +115,58 @@ extern (C) Object _d_newclass(const ClassInfo ci)
     return cast(Object) p;
 }
 
+T _d_NewClass(T, alias const(void)[] ClassInit, TypeInfo_Class.ClassFlags flags)()
+{
+    import core.stdc.stdlib;
+    import core.exception : onOutOfMemoryError;
+    void* p;
+
+    debug(PRINTF)
+        printf("_d_NewClass!(%s, flags = %d)\n", T.stringof, flags);
+    static if (flags & TypeInfo_Class.ClassFlags.isCOMclass)
+    {   /* COM objects are not garbage collected, they are reference counted
+         * using AddRef() and Release(). They get free'd by C's free()
+         * function called by Release() when Release()'s reference count goes
+         * to zero.
+         */
+        p = malloc(ClassInit.length);
+        if (!p)
+            onOutOfMemoryError();
+    }
+    else
+    {
+        // TODO: should this be + 1 to avoid having pointers to the next block?
+        BlkAttr attr = BlkAttr.NONE;
+        // extern(C++) classes don't have a classinfo pointer in their vtable so the GC can't finalize them
+        static if (flags & TypeInfo_Class.ClassFlags.hasDtor
+            && !(flags & TypeInfo_Class.ClassFlags.isCPPclass))
+            attr |= BlkAttr.FINALIZE;
+        static if (flags & TypeInfo_Class.ClassFlags.noPointers)
+            attr |= BlkAttr.NO_SCAN;
+        p = GC.malloc(ClassInit.length, attr);
+        debug(PRINTF) printf(" p = %p\n", p);
+    }
+
+    debug(PRINTF)
+    {
+        printf("p = %p\n", p);
+        printf("initializer(len=%llu) = %p\n", ClassInit.length, ClassInit.ptr);
+        printf("vptr = %p\n", *cast(void**) ClassInit);
+        printf("vtbl[0] = %p\n", (*cast(void***) ClassInit)[0]);
+        printf("vtbl[1] = %p\n", (*cast(void***) ClassInit)[1]);
+        printf("init[0] = %x\n", (cast(uint*) ClassInit)[0]);
+        printf("init[1] = %x\n", (cast(uint*) ClassInit)[1]);
+        printf("init[2] = %x\n", (cast(uint*) ClassInit)[2]);
+        printf("init[3] = %x\n", (cast(uint*) ClassInit)[3]);
+        printf("init[4] = %x\n", (cast(uint*) ClassInit)[4]);
+    }
+
+    // initialize it
+    p[0 .. ClassInit.length] = ClassInit[];
+
+    debug(PRINTF) printf("initialization done\n");
+    return cast(T) p;
+}
 
 /**
  *
