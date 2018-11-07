@@ -112,7 +112,7 @@ class ManualGC : GC
         return 0;
     }
 
-    void* malloc(size_t size, uint bits, const TypeInfo ti) nothrow
+    void* malloc(size_t size, uint bits, const TypeInfo ti = null) nothrow
     {
         void* p = cstdlib.malloc(size);
 
@@ -121,16 +121,16 @@ class ManualGC : GC
         return p;
     }
 
-    BlkInfo qalloc(size_t size, uint bits, const TypeInfo ti) nothrow
+    BlkInfo qalloc(size_t size, uint bits, const TypeInfo ti = null) nothrow
     {
         BlkInfo retval;
-        retval.base = malloc(size, bits, ti);
+        retval.base = malloc(size, bits);
         retval.size = size;
         retval.attr = bits;
         return retval;
     }
 
-    void* calloc(size_t size, uint bits, const TypeInfo ti) nothrow
+    void* calloc(size_t size, uint bits, const TypeInfo ti = null) nothrow
     {
         void* p = cstdlib.calloc(1, size);
 
@@ -139,7 +139,7 @@ class ManualGC : GC
         return p;
     }
 
-    void* realloc(void* p, size_t size, uint bits, const TypeInfo ti) nothrow
+    void* realloc(void* p, size_t size, uint bits, const TypeInfo ti = null) nothrow
     {
         p = cstdlib.realloc(p, size);
 
@@ -148,7 +148,7 @@ class ManualGC : GC
         return p;
     }
 
-    size_t extend(void* p, size_t minsize, size_t maxsize, const TypeInfo ti) nothrow
+    size_t extend(void* p, size_t minsize, size_t maxsize, const TypeInfo ti = null) nothrow
     {
         return 0;
     }

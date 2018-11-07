@@ -86,22 +86,22 @@ interface GC
     /**
      *
      */
-    void* malloc(size_t size, uint bits, const TypeInfo ti) nothrow;
+    void* malloc(size_t size, uint bits, const TypeInfo ti = null) nothrow;
 
     /*
      *
      */
-    BlkInfo qalloc(size_t size, uint bits, const TypeInfo ti) nothrow;
+    BlkInfo qalloc(size_t size, uint bits, const TypeInfo ti = null) nothrow;
 
     /*
      *
      */
-    void* calloc(size_t size, uint bits, const TypeInfo ti) nothrow;
+    void* calloc(size_t size, uint bits, const TypeInfo ti = null) nothrow;
 
     /*
      *
      */
-    void* realloc(void* p, size_t size, uint bits, const TypeInfo ti) nothrow;
+    void* realloc(void* p, size_t size, uint bits, const TypeInfo ti = null) nothrow;
 
     /**
      * Attempt to in-place enlarge the memory block pointed to by p by at least

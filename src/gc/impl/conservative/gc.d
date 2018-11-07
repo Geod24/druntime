@@ -483,7 +483,7 @@ class ConservativeGC : GC
     }
 
 
-    void *malloc(size_t size, uint bits, const TypeInfo ti) nothrow
+    void *malloc(size_t size, uint bits, const TypeInfo ti = null) nothrow
     {
         if (!size)
         {
@@ -492,7 +492,7 @@ class ConservativeGC : GC
 
         size_t localAllocSize = void;
 
-        auto p = runLocked!(mallocNoSync, mallocTime, numMallocs)(size, bits, localAllocSize, ti);
+        auto p = runLocked!(mallocNoSync, mallocTime, numMallocs)(size, bits, localAllocSize);
 
         if (!(bits & BlkAttr.NO_SCAN))
         {
@@ -506,7 +506,7 @@ class ConservativeGC : GC
     //
     //
     //
-    private void *mallocNoSync(size_t size, uint bits, ref size_t alloc_size, const TypeInfo ti = null) nothrow
+    private void *mallocNoSync(size_t size, uint bits, ref size_t alloc_size) nothrow
     {
         assert(size != 0);
 
@@ -530,7 +530,7 @@ class ConservativeGC : GC
     }
 
 
-    BlkInfo qalloc( size_t size, uint bits, const TypeInfo ti) nothrow
+    BlkInfo qalloc(size_t size, uint bits, const TypeInfo ti = null) nothrow
     {
 
         if (!size)
@@ -540,7 +540,7 @@ class ConservativeGC : GC
 
         BlkInfo retval;
 
-        retval.base = runLocked!(mallocNoSync, mallocTime, numMallocs)(size, bits, retval.size, ti);
+        retval.base = runLocked!(mallocNoSync, mallocTime, numMallocs)(size, bits, retval.size);
 
         if (!(bits & BlkAttr.NO_SCAN))
         {
@@ -552,7 +552,7 @@ class ConservativeGC : GC
     }
 
 
-    void *calloc(size_t size, uint bits, const TypeInfo ti) nothrow
+    void *calloc(size_t size, uint bits, const TypeInfo ti = null) nothrow
     {
         if (!size)
         {
@@ -561,7 +561,7 @@ class ConservativeGC : GC
 
         size_t localAllocSize = void;
 
-        auto p = runLocked!(mallocNoSync, mallocTime, numMallocs)(size, bits, localAllocSize, ti);
+        auto p = runLocked!(mallocNoSync, mallocTime, numMallocs)(size, bits, localAllocSize);
 
         memset(p, 0, size);
         if (!(bits & BlkAttr.NO_SCAN))
@@ -603,7 +603,7 @@ class ConservativeGC : GC
         }
         else if (!p)
         {
-            p = mallocNoSync(size, bits, alloc_size, ti);
+            p = mallocNoSync(size, bits, alloc_size);
         }
         else
         {   void *p2;
@@ -635,7 +635,7 @@ class ConservativeGC : GC
                             }
                         }
                     }
-                    p2 = mallocNoSync(size, bits, alloc_size, ti);
+                    p2 = mallocNoSync(size, bits, alloc_size);
                     if (psize < size)
                         size = psize;
                     //debug(PRINTF) printf("\tcopying %d bytes\n",size);
@@ -715,7 +715,7 @@ class ConservativeGC : GC
                             bits = pool.getBits(biti);
                         }
                     }
-                    p2 = mallocNoSync(size, bits, alloc_size, ti);
+                    p2 = mallocNoSync(size, bits, alloc_size);
                     if (psize < size)
                         size = psize;
                     //debug(PRINTF) printf("\tcopying %d bytes\n",size);
@@ -3451,4 +3451,3 @@ unittest
     GC.free(z);
     GC.minimize(); // release huge pool
 }
-
