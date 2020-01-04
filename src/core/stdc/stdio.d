@@ -794,6 +794,11 @@ else version (CRuntime_UClibc)
 }
 else
 {
+    // Provide dummy declarations so that the static assert is shown
+    // See https://issues.dlang.org/show_bug.cgi?id=16665#c1
+    alias shared(void*) FILE;
+    alias size_t fpos_t;
+
     static assert( false, "Unsupported platform" );
 }
 
