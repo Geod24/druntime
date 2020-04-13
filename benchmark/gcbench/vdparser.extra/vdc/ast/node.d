@@ -74,7 +74,7 @@ class NodeAllocData
             for(byte* p = beg; p < end && *cast(size_t*)p != 0; p += sz)
             {
                 Node n = cast(Node) p;
-                sz = n.classinfo.init.length;
+                sz = typeid(n).initializer.length;
                 sz = (sz + 15) & ~15;
                 assert(sz > 0);
                 clear(n); // calls rt_finalize
@@ -232,7 +232,7 @@ class Node
 
     final Node _cloneShallow()
     {
-        Node    n = static_cast!Node(this.classinfo.create());
+        Node    n = static_cast!Node(typeid(this).create());
 
         n.id = id;
         n.attr = attr;
@@ -253,7 +253,7 @@ class Node
 
     bool compare(const(Node) n) const
     {
-        if(this.classinfo !is n.classinfo)
+        if (typeid(this) !is typeid(n))
             return false;
 
         if(n.id != id || n.attr != attr || n.annotation != annotation)
@@ -316,7 +316,7 @@ class Node
     ////////////////////////////////////////////////////////////
     abstract void toD(CodeWriter writer)
     {
-        writer(this.classinfo.name);
+        writer(typeid(this).name);
         writer.nl();
 
         auto indent = CodeIndenter(writer);

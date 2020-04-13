@@ -269,7 +269,8 @@ void setSameMutex(shared Object ownee, shared Object owner)
  */
 struct Interface
 {
-    TypeInfo_Class   classinfo;  /// .classinfo for this interface (not for containing class)
+    /// Class info returned by `typeid` for this interface (not for containing class)
+    TypeInfo_Class   classinfo;
     void*[]     vtbl;
     size_t      offset;     /// offset to Interface 'this' from Object 'this'
 }
@@ -964,7 +965,7 @@ private extern (C) Object _d_newclass(const TypeInfo_Class ci);
 /**
  * Runtime type information about a class.
  * Can be retrieved from an object instance by using the
- * $(DDSUBLINK spec/property,classinfo, .classinfo) property.
+ * $(DDSUBLINK spec/expression,typeid_expressions,typeid expression).
  */
 class TypeInfo_Class : TypeInfo
 {
