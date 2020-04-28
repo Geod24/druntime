@@ -68,7 +68,9 @@ else
     import rt.backtrace.elf;
 
 import rt.util.container.array;
+import core.stdc.stdio : snprintf;
 import core.stdc.string : strlen, memcpy;
+import core.sys.posix.stdlib : free;
 
 //debug = DwarfDebugMachine;
 debug(DwarfDebugMachine) import core.stdc.stdio : printf;
@@ -83,9 +85,6 @@ struct Location
 
 int traceHandlerOpApplyImpl(const void*[] callstack, scope int delegate(ref size_t, ref const(char[])) dg)
 {
-    import core.stdc.stdio : snprintf;
-    import core.sys.posix.stdlib : free;
-
     const char** frameList = backtrace_symbols(callstack.ptr, cast(int) callstack.length);
     scope(exit) free(cast(void*) frameList);
 
