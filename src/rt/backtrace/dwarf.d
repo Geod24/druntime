@@ -466,7 +466,7 @@ const(char)[] getDemangledSymbol(const(char)[] btSymbol, return ref char[1024] b
     return !mangledName.length ? buffer[0..0] : demangle(mangledName, buffer[]);
 }
 
-T read(T)(ref const(ubyte)[] buffer) @nogc nothrow
+T read(T)(scope ref const(ubyte)[] buffer) @nogc nothrow pure
 {
     version (X86)         enum hasUnalignedLoads = true;
     else version (X86_64) enum hasUnalignedLoads = true;
@@ -486,7 +486,7 @@ T read(T)(ref const(ubyte)[] buffer) @nogc nothrow
     return result;
 }
 
-ulong readULEB128(ref const(ubyte)[] buffer) @nogc nothrow
+ulong readULEB128(scope ref const(ubyte)[] buffer) @nogc nothrow pure
 {
     ulong val = 0;
     uint shift = 0;
