@@ -77,10 +77,65 @@ debug(DwarfDebugMachine) import core.stdc.stdio : printf;
 
 struct Location
 {
+    const(char)[] mangledName;
     const(char)[] file = null;
     const(char)[] directory = null;
     int line = -1;
     size_t address;
+
+    void toString(scope void delegate(scope const(char)[] chunk) sink)
+        const
+    {
+        char[1536] buffer = void;
+        size_t bufferLength = 0;
+
+        void appendToBuffer(Args...)(const(char)* format, Args args)
+        {
+            const count = snprintf(buffer.ptr + bufferLength, buffer.length - bufferLength, format, args);
+            assert(count >= 0);
+            bufferLength += count;
+            if (bufferLength >= buffer.length)
+                bufferLength = buffer.length - 1;
+        }
+
+        // If we don't have file / line information, line will be its default
+        // value. Note that '0' means "non-attributable" according to DWARF v4,
+        // hence the different default value used here.
+        if (this.line != -1)
+        {
+            bool includeSlash = this.directory.length && this.directory[$ - 1] != '/';
+            string printFormat = includeSlash ? "%.*s/%.*s:%d " : "%.*s%.*s:%d ";
+
+            appendToBuffer(
+                printFormat.ptr,
+                cast(int) this.directory.length, this.directory.ptr,
+                cast(int) this.file.length, this.file.ptr,
+                this.line,
+                );
+        }
+        // No line info available
+        else
+        {
+            buffer[0 .. 5] = "??:? ";
+            bufferLength = 5;
+        }
+
+        char[1024] symbolBuffer = void;
+        auto symbol = getDemangledSymbol(this.mangledName, symbolBuffer);
+        if (symbol.length > 0)
+            appendToBuffer("%.*s ", cast(int) symbol.length, symbol.ptr);
+
+        const addressLength = 20;
+        const maxBufferLength = buffer.length - addressLength;
+        if (bufferLength > maxBufferLength)
+        {
+            buffer[maxBufferLength-4 .. maxBufferLength] = "... ";
+            bufferLength = maxBufferLength;
+        }
+        appendToBuffer("[0x%zx]", this.address);
+
+        sink(buffer[0 .. bufferLength]);
+    }
 }
 
 int traceHandlerOpApplyImpl(const void*[] callstack, scope int delegate(ref size_t, ref const(char[])) dg)
@@ -104,57 +159,13 @@ int traceHandlerOpApplyImpl(const void*[] callstack, scope int delegate(ref size
         }
 
         int ret = 0;
-        foreach (size_t i; 0 .. callstack.length)
+        foreach (idx, ref loc; locations)
         {
-            char[1536] buffer = void;
-            size_t bufferLength = 0;
-
-            void appendToBuffer(Args...)(const(char)* format, Args args)
-            {
-                const count = snprintf(buffer.ptr + bufferLength, buffer.length - bufferLength, format, args);
-                assert(count >= 0);
-                bufferLength += count;
-                if (bufferLength >= buffer.length)
-                    bufferLength = buffer.length - 1;
-            }
-
-
-            if (locations.length > 0 && locations[i].line != -1)
-            {
-                bool includeSlash = locations[i].directory.length > 0 && locations[i].directory[$ - 1] != '/';
-                string printFormat = includeSlash ? "%.*s/%.*s:%d " : "%.*s%.*s:%d ";
-
-                appendToBuffer(
-                    printFormat.ptr,
-                    cast(int) locations[i].directory.length, locations[i].directory.ptr,
-                    cast(int) locations[i].file.length, locations[i].file.ptr,
-                    locations[i].line,
-                );
-            }
-            else
-            {
-                buffer[0 .. 5] = "??:? ";
-                bufferLength = 5;
-            }
-
-            char[1024] symbolBuffer = void;
-            auto symbol = getDemangledSymbol(frameList[i][0 .. strlen(frameList[i])], symbolBuffer);
-            if (symbol.length > 0)
-                appendToBuffer("%.*s ", cast(int) symbol.length, symbol.ptr);
-
-            const addressLength = 20;
-            const maxBufferLength = buffer.length - addressLength;
-            if (bufferLength > maxBufferLength)
-            {
-                buffer[maxBufferLength-4 .. maxBufferLength] = "... ";
-                bufferLength = maxBufferLength;
-            }
-            appendToBuffer("[0x%zx]", callstack[i]);
-
-            auto output = buffer[0 .. bufferLength];
-            auto pos = i;
-            ret = dg(pos, output);
-            if (ret || symbol == "_Dmain") break;
+            const frame = frameList[idx];
+            loc.mangledName = frame[0 .. strlen(frame)];
+            loc.toString((scope const(char)[] data) { ret = dg(idx, data); });
+            if (ret || frame == "_Dmain")
+                break;
         }
 
         return ret;
