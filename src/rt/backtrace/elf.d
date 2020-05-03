@@ -36,23 +36,24 @@ struct Image
 {
     private ElfFile file;
 
-    static Image* openSelf()
+    static immutable(Image)* openSelf()
     {
         const(char)* selfPath = SharedObject.thisExecutable().name().ptr;
 
-        Image image;
+        auto image = new Image();
         if (!ElfFile.open(selfPath, image.file))
-            image.file = ElfFile.init;
+            return null;
 
-        return image;
+        return cast(immutable) image;
     }
 
-    @property bool isValid()
+    @property bool isValid() const
     {
         return file != ElfFile.init;
     }
 
     T processDebugLineSectionData(T)(scope T delegate(const(ubyte)[]) processor)
+        const
     {
         ElfSectionHeader dbgSectionHeader;
         ElfSection dbgSection;
@@ -67,7 +68,7 @@ struct Image
         return processor(cast(const(ubyte)[]) dbgSection.data());
     }
 
-    @property size_t baseAddress()
+    @property size_t baseAddress() const
     {
         // the DWARF addresses for DSOs are relative
         const isDynamicSharedObject = (file.ehdr.e_type == ET_DYN);
