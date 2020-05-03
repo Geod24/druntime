@@ -68,12 +68,42 @@ else
     import rt.backtrace.elf;
 
 import rt.util.container.array;
+static import core.atomic;
 import core.stdc.stdio : snprintf;
 import core.stdc.string : strlen, memcpy;
 import core.sys.posix.stdlib : free;
 
 //debug = DwarfDebugMachine;
 debug(DwarfDebugMachine) import core.stdc.stdio : printf;
+
+/**
+ * Cached image for this executable
+ *
+ * In order to read our DWARF debug informations, we need to open the binary
+ * and read the DWARF `.debug_lines` section (and perhaps others in the future).
+ * Opening the binary is an expansive operation, and doing it for every call
+ * to `Throwable.toString` would be too expensive, so the opened instance is
+ * cached here. This makes sense for any caller that calls
+ * `traceHandlerOpApplyImpl` more than once.
+ *
+ * Note that opening is done lazily: If `traceHandlerOpApplyImpl` is never
+ * called, the binary will never be opened.
+ *
+ * Since the data is the same for all threads, we simply provide an
+ * `immutable` pointer and use atomic operations for initialization.
+ *
+ * Resources_limitation:
+ * Most system have resources limits, and keeping file descriptors open is
+ * generally not advised. On POSIX, we can just open, mmap the data,
+ * and release the FD, although this is not yet supported.
+ * On Darwin, the MachO reader could potentially open many file descriptors,
+ * as many as there are object files, once debug info is handled correctly
+ * (Once https://issues.dlang.org/show_bug.cgi?id=20510 is fixed).
+ */
+private shared immutable(Image)* cached_image;
+
+/// The sentinel used for the two-step initialization
+private immutable(Image*) ImageSentinel = cast(immutable(Image*)) size_t.max;
 
 struct Location
 {
@@ -143,13 +173,39 @@ int traceHandlerOpApplyImpl(const void*[] callstack, scope int delegate(ref size
     const char** frameList = backtrace_symbols(callstack.ptr, cast(int) callstack.length);
     scope(exit) free(cast(void*) frameList);
 
-    auto image = Image.openSelf();
+    // // Template argument deduction fails, so instantiate it explicitly
+    // alias cas = core.atomic.cas!(
+    //     MemoryOrder.seq, MemoryOrder.seq,
+    //     /* T here */    shared(immutable(Image)*),
+    //     /* V1 ifThis */ immutable(
+
+    // Check if image is initialized
+    immutable(Image)* image = core.atomic.atomicLoad(cached_image);
+    // Try to initialize it ourselves, first with the sentinel value
+    if (image is null &&
+        core.atomic.cas(&cached_image, null, ImageSentinel))
+    {
+        // We have the 'lock' (sentinel value), do the real initialization
+        image = Image.openSelf();
+        core.atomic.atomicStore(cached_image, image);
+    }
+    else
+    {
+        // Pending initialization, do a poor spinlock
+        // This yields terrible performance but should be extremely rare
+        // (and only occur "once", since the `cached_image` is never freed).
+        while (image is ImageSentinel)
+        {
+            core.atomic.pause();
+            image = core.atomic.atomicLoad(cached_image);
+        }
+    }
 
     int processCallstack(const(ubyte)[] debugLineSectionData)
     {
         // find address -> file, line mapping using dwarf debug_line
         Array!Location locations;
-        if (debugLineSectionData)
+        if (debugLineSectionData) // Image is non-null
         {
             locations.length = callstack.length;
             foreach (size_t i; 0 .. callstack.length)
@@ -171,9 +227,9 @@ int traceHandlerOpApplyImpl(const void*[] callstack, scope int delegate(ref size
         return ret;
     }
 
-    return image.isValid
-        ? image.processDebugLineSectionData(&processCallstack)
-        : processCallstack(null);
+    if (image is null || !image.isValid())
+        return processCallstack(null);
+    return image.processDebugLineSectionData(&processCallstack);
 }
 
 private:

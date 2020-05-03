@@ -36,7 +36,7 @@ struct Image
 {
     private ElfFile file;
 
-    static Image openSelf()
+    static Image* openSelf()
     {
         const(char)* selfPath = SharedObject.thisExecutable().name().ptr;
 
