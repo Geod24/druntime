@@ -5,7 +5,7 @@ on assertion failures
 module core.internal.dassert;
 
 /// Allows customized assert error messages for unary expressions
-string _d_assert_fail(string op, A)(auto ref const scope A a)
+string _d_assert_fail(string op, A)(in A a)
 {
     string val = miniFormatFakeAttributes(a);
     enum token = op == "!" ? "==" : "!=";
@@ -13,7 +13,7 @@ string _d_assert_fail(string op, A)(auto ref const scope A a)
 }
 
 /// Allows customized assert error messages for binary expressions
-string _d_assert_fail(string comp, A, B)(auto ref const scope A a, auto ref const scope B b)
+string _d_assert_fail(string comp, A, B)(in A a, in B b)
 {
     /*
     The program will be terminated after the assertion error message has
@@ -29,8 +29,8 @@ string _d_assert_fail(string comp, A, B)(auto ref const scope A a, auto ref cons
 }
 
 /// Combines the supplied arguments into one string "valA token valB"
-private string combine(const scope string valA, const scope string token,
-const scope string valB) pure nothrow @nogc @safe
+private string combine(in string valA, in string token, in string valB)
+    pure nothrow @nogc @safe
 {
     const totalLen = valA.length + token.length + valB.length + 2;
     char[] buffer = cast(char[]) pureAlloc(totalLen)[0 .. totalLen];
@@ -78,7 +78,7 @@ private template getPrintfFormat(T)
 Minimalistic formatting for use in _d_assert_fail to keep the compilation
 overhead small and avoid the use of Phobos.
 */
-private string miniFormat(V)(const scope ref V v)
+private string miniFormat(V)(in V v)
 {
     import core.internal.traits: isAggregateType;
     import core.stdc.stdio : sprintf;
@@ -314,7 +314,7 @@ private auto assumeFakeAttributes(T)(T t) @trusted
     return cast(type) t;
 }
 
-private string miniFormatFakeAttributes(T)(const scope ref T t)
+private string miniFormatFakeAttributes(T)(in T t)
 {
     alias miniT = miniFormat!T;
     return assumeFakeAttributes(&miniT)(t);
