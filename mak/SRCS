@@ -54,6 +54,7 @@ SRCS=\
 	src\core\internal\backtrace\dwarf.d \
 	src\core\internal\backtrace\elf.d \
 	src\core\internal\backtrace\macho.d \
+	src\core\internal\backtrace\primitives.d \
 	\
 	src\core\internal\container\array.d \
 	src\core\internal\container\common.d \

@@ -54,6 +54,7 @@ COPY=\
 	$(IMPDIR)\core\internal\backtrace\dwarf.d \
 	$(IMPDIR)\core\internal\backtrace\elf.d \
 	$(IMPDIR)\core\internal\backtrace\macho.d \
+	$(IMPDIR)\core\internal\backtrace\primitives.d \
 	\
 	$(IMPDIR)\core\internal\elf\dl.d \
 	$(IMPDIR)\core\internal\elf\io.d \

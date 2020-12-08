@@ -1868,12 +1868,10 @@ const:
  */
 class Throwable : Object
 {
-    interface TraceInfo
-    {
-        int opApply(scope int delegate(ref const(char[]))) const;
-        int opApply(scope int delegate(ref size_t, ref const(char[]))) const;
-        string toString() const;
-    }
+    import core.internal.backtrace.primitives;
+
+    /// An interface providing informations about the stack trace
+    public alias TraceInfo = core.internal.backtrace.primitives.TraceInfo;
 
     string      msg;    /// A message describing the error.
 
