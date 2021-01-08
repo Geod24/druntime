@@ -18,6 +18,8 @@ module core.internal.backtrace.handler;
 
 version (DRuntime_Use_Libunwind):
 
+import core.stdc.string : strlen;
+import core.sys.posix.dlfcn;
 import core.internal.backtrace.dwarf;
 import core.internal.backtrace.libunwind;
 
@@ -26,9 +28,14 @@ class LibunwindHandler : Throwable.TraceInfo
 {
     private static struct FrameInfo
     {
-        char[1024] buff = void;
+        const(char)[] name () const @trusted nothrow @nogc
+        {
+            Dl_info info = void;
+            if (dladdr(this.address, &info) && info.dli_sname !is null)
+                return info.dli_sname[0 .. strlen(info.dli_sname)];
+            return null;
+        }
 
-        const(char)[] name;
         const(void)* address;
     }
 
@@ -46,8 +53,6 @@ class LibunwindHandler : Throwable.TraceInfo
      */
     public this (size_t frames_to_skip = 1) nothrow @nogc
     {
-        import core.stdc.string : strlen;
-
         static assert(typeof(FrameInfo.address).sizeof == unw_word_t.sizeof,
                       "Mismatch in type size for call to unw_get_proc_name");
 
@@ -62,13 +67,6 @@ class LibunwindHandler : Throwable.TraceInfo
         unw_proc_info_t pip = void;
         foreach (idx, ref frame; this.callstack)
         {
-            if (int r = unw_get_proc_name(
-                    &cursor, frame.buff.ptr, frame.buff.length,
-                    cast(unw_word_t*) &frame.address))
-                frame.name = "<ERROR: Unable to retrieve function name>";
-            else
-                frame.name = frame.buff[0 .. strlen(frame.buff.ptr)];
-
             if (unw_get_proc_info(&cursor, &pip) == 0)
                 frame.address += pip.start_ip;
 
